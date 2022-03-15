@@ -82,7 +82,16 @@ def fullLayerForwardProp(input, paramValues, nnArchitecture_):
     #return the last neuron layer (output) 
     return aCurr, history
 
+## Define a cost function
 
 
+def costFunction(yPred, y):
+    m = yPred.shape[1]
+    cost = -1 / m * (np.dot(y, np.log(yPred).T) + np.dot(1 - y, np.log(1 - yPred).T))
+    return np.squeeze(cost)
+
+yPred = abs(ra.randn(5, 1))
+y = abs(ra.randn(5, 1)) 
 
 
+costFunction(yPred.T, y.T)
