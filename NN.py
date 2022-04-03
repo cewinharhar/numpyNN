@@ -63,7 +63,7 @@ def singleLayerForwardProp(aPrev, wCurr, bCurr, activation = "reLU"):
     else:
         raise Exception("wrong activation function")
 
-def fullLayerForwardProp(input, paramValues, nnArchitecture_):
+def fullLayerForwardProp(input, shuffleValues, nnArchitecture_):
     history = {}
     #input neurons
     aCurr = copy(input)
@@ -73,8 +73,8 @@ def fullLayerForwardProp(input, paramValues, nnArchitecture_):
         #next layer neurons
         aPrev = aCurr
 
-        wCurr              = paramValues["w" + str(layerIdx)]
-        bCurr              = paramValues["b" + str(layerIdx)]
+        wCurr              = shuffleValues["w" + str(layerIdx)]
+        bCurr              = shuffleValues["b" + str(layerIdx)]
         aCurr, zCurr       = singleLayerForwardProp(aPrev, wCurr, bCurr, layer["activation"])
 
         history["a" + str(idx)] = aPrev
@@ -90,8 +90,29 @@ def costFunction(yPred, y):
     cost = -1 / m * (np.dot(y, np.log(yPred).T) + np.dot(1 - y, np.log(1 - yPred).T))
     return np.squeeze(cost)
 
-yPred = abs(ra.randn(5, 1))
-y = abs(ra.randn(5, 1)) 
+def singleLayerBackwardProp(daCurr, wCurr, bCurr, zCurr, aPrev, activation = "reLU"):
+    m = aPrev.shape[1]
 
+    if activation is "reLU":
+        backward_activation_func = derReLU
+    elif activation is "sigmoid":
+        backward_activation_func = derSigmoid
+    else:
+        raise Exception('Non-supported activation function')
+    
+    dzCurr = backward_activation_func(daCurr, zCurr)
+    dbCurr = np.sum(dzCurr, axis=1, keepdims=True) / m
+    dwCurr = np.dot(dzCurr, aPrev.T) / m
+    daPrev = np.dot(wCurr, dzCurr)
 
-costFunction(yPred.T, y.T)
+    return daPrev, dwCurr, dbCurr
+
+def fullBackwardProp(yPred, y, memory, shuffleValues, nnArchitecture):
+    gradsValues = {}
+    m = y.shape[1]
+    #why reshaping?
+    y = y.reshape(yPred.shape)
+
+    #optimization method
+    daPrev = - (np.divide(y, yPred) - np.divide(1 - y, 1- yPred))
+
